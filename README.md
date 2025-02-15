@@ -1,6 +1,6 @@
-# Cognify - AI Task Orchestration Platform
+# NeuraParallel.ai - AI Task Orchestration Platform
 
-Cognify is an advanced orchestration platform that leverages specialized AI agents to break down, distribute, and execute complex tasks. The platform utilizes state-of-the-art LLM models to provide intelligent task decomposition, parallel processing, and dynamic result aggregation.
+NeuraParallel.ai is an advanced orchestration platform that leverages specialized AI agents to break down, distribute, and execute complex tasks. The platform utilizes state-of-the-art LLM models to provide intelligent task decomposition, parallel processing, and dynamic result aggregation.
 
 ## Features
 
@@ -35,7 +35,7 @@ Cognify is an advanced orchestration platform that leverages specialized AI agen
 ## Project Structure
 
 ```
-cognify/
+NeuraParallel.ai/
 ├── frontend/
 │   ├── public/
 │   └── src/
