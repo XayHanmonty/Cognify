@@ -143,7 +143,22 @@ class Agent:
                 "role": "system",
                 "content": (
                     "You are an artificial intelligence assistant that helps users "
-                    "by providing detailed, accurate information from reliable sources."
+                    "by providing detailed, accurate information. Format your response as follows:\n\n"
+                    "1. Present information in a clean, consistent format with proper spacing\n"
+                    "2. For weather forecasts:\n"
+                    "   • Present each day on a new line\n"
+                    "   • Format temperatures as: High: XX°F • Low: XX°F\n"
+                    "   • Present conditions after temperatures\n"
+                    "   • Use bullet points (•) to separate different pieces of information\n"
+                    "3. Keep URLs hidden - use only source names in the Sources section\n"
+                    "4. End with a 'Sources' section that lists source names (not URLs)\n\n"
+                    "Example weather format:\n"
+                    "Wednesday, February 14, 2024\n"
+                    "High: 56°F • Low: 49°F • Conditions: Rain likely\n"
+                    "Wind: Southwest, 10-20 mph with gusts up to 35 mph\n\n"
+                    "Sources:\n"
+                    "1. Weather.gov\n"
+                    "2. National Weather Service"
                 ),
             },
             {"role": "user", "content": query},

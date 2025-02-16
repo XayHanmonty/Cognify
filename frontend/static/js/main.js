@@ -1,6 +1,6 @@
 const chatMessages = document.getElementById('chat-messages');
 const userInput = document.getElementById('user-input');
-let currentMode = 'chat'; // Default mode
+let currentMode = 'chat'; 
 
 // Function to auto-resize textarea
 function autoResizeTextarea() {
@@ -53,7 +53,61 @@ function createTypingIndicator() {
 function appendMessage(message, isUser) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-    messageDiv.textContent = message;
+    
+    if (isUser) {
+        messageDiv.textContent = message;
+    } else {
+        // For bot messages, handle formatting
+        let formattedMessage = message
+            // Format temperatures (e.g., 56°F)
+            .replace(/(\d+)°([FC])/g, '<span class="temp">$1°$2</span>')
+            
+            // Format weather conditions
+            .replace(/(Conditions: )(.*?)(?=\s*[•\n]|$)/g, '$1<span class="conditions">$2</span>')
+            
+            // Format date/time
+            .replace(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+\d{4})/g, 
+                '<span class="datetime">$1</span>')
+            
+            // Handle bullet points while preserving spacing
+            .replace(/^[•\-] (.*)/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+            
+            // Handle Sources section
+            .replace(/Sources:\n((?:\d+\. .*\n?)+)/g, (match, list) => {
+                const items = list.split('\n')
+                    .filter(item => item.trim())
+                    .map(item => {
+                        const [num, sourceFull] = item.split('. ');
+                        const [name, url] = sourceFull.split(' - ').map(s => s.trim());
+                        return `<li class="source-item">
+                            <span class="source-number">${num}</span>
+                            <a href="${url || '#'}" 
+                               class="source-link" 
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                ${name}
+                            </a>
+                        </li>`;
+                    })
+                    .join('');
+                return `<div class="sources" id="sources">
+                    <h3>Sources</h3>
+                    <ol>${items}</ol>
+                </div>`;
+            });
+        
+        // Handle paragraphs
+        formattedMessage = formattedMessage
+            .split('\n\n')
+            .map(p => p.trim())
+            .filter(p => p && !p.startsWith('<'))
+            .map(p => `<p>${p}</p>`)
+            .join('');
+        
+        messageDiv.innerHTML = formattedMessage;
+    }
+    
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return messageDiv;
@@ -85,7 +139,7 @@ async function handleSubmit() {
             },
             body: JSON.stringify({ 
                 message: message,
-                query: message, // Send as both for compatibility
+                query: message, 
                 stream: true 
             }),
         });

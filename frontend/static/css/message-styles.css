@@ -1,0 +1,90 @@
+.bot-message {
+    line-height: 1.6;
+    font-size: 16px;
+    color: #6B46C1;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    white-space: pre-wrap;
+}
+
+/* Sources section */
+.bot-message .sources {
+    margin-top: 2em;
+    padding: 1.5em;
+    border-radius: 12px;
+    background: rgba(107, 70, 193, 0.05);
+    border: 1px solid rgba(107, 70, 193, 0.1);
+    box-shadow: 0 2px 8px rgba(107, 70, 193, 0.05);
+}
+
+.bot-message .sources h3 {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 1em;
+    color: #553C9A;
+}
+
+.bot-message .sources ol {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.bot-message .source-item {
+    position: relative;
+    margin: 0.8em 0;
+    padding: 0.5em 1em;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 1em;
+}
+
+.bot-message .source-number {
+    color: #805AD5;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.bot-message .source-link {
+    color: #6B46C1;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.bot-message .source-item:hover {
+    background: rgba(128, 90, 213, 0.1);
+}
+
+.bot-message .source-link:hover {
+    color: #805AD5;
+}
+
+/* Temperature and weather values */
+.bot-message .temp {
+    color: #805AD5;
+    font-weight: 500;
+}
+
+/* Weather conditions */
+.bot-message .conditions {
+    font-style: italic;
+    color: #6B46C1;
+}
+
+/* Time and date */
+.bot-message .datetime {
+    color: #553C9A;
+    font-weight: 500;
+}
+
+/* Bullet points */
+.bot-message ul {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.bot-message li {
+    margin: 0.3em 0;
+    color: #553C9A;
+}
