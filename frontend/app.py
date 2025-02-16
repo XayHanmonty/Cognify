@@ -3,16 +3,23 @@ from flask_cors import CORS
 import sys
 from pathlib import Path
 import json
+import os
 
 # Add the backend directory to Python path
 project_root = Path(__file__).parent.parent
-backend_dir = project_root / "backend" / "testIntegration"
-sys.path.append(str(backend_dir))
+# backend_dir = project_root / "backend" / "testIntegration"
+# sys.path.append(str(backend_dir))
+sys.path.insert(0, str(project_root))
 
-from testChat import get_chat_response, get_chat_response_sync
+#Test code
+# from testChat import get_chat_response, get_chat_response_sync
+from backend.controllers.agentController import AgentController
 
 app = Flask(__name__)
 CORS(app)
+
+# Initialize the AgentController
+agent_controller = AgentController()
 
 @app.route('/')
 def index():
@@ -26,12 +33,20 @@ def chat():
 
     if not stream:
         # Use synchronous version for non-streaming requests
-        response = get_chat_response_sync(user_message)
-        return jsonify({'response': response})
+        # response = get_chat_response_sync(user_message)
+        # return jsonify({'response': response})
+        #---------------------------------------------------------
+        subtasks = agent_controller.decompose_task(user_message)
+        return jsonify({'response': subtasks})
     
     def generate():
-        for text_chunk in get_chat_response(user_message):
-            yield f"data: {json.dumps({'chunk': text_chunk})}\n\n"
+
+        # Use asynchronous version for streaming
+        # for text_chunk in get_chat_response(user_message):
+        #     yield f"data: {json.dumps({'chunk': text_chunk})}\n\n"
+        #---------------------------------------------------------
+        subtasks = agent_controller.decompose_task(user_message)
+        yield f"data: {json.dumps({'chunk': str(subtasks)})}\n\n"
     
     return Response(stream_with_context(generate()), 
                    mimetype='text/event-stream',
