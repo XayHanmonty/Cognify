@@ -12,6 +12,9 @@ from datetime import datetime
 from backend.controllers.query_classifier import QueryClassifier
 import uuid
 
+# Load the spacy model for NLP tasks
+# nlp = spacy.load("en_core_web_sm")
+
 # Schema Definitions
 class SubQuery(BaseModel):
     task_id: str = Field(default_factory=lambda: f"task_{id(object())}")
@@ -71,7 +74,11 @@ class AgentController:
         # Configure the decomposition pipeline
         system_prompt = """
         You are Cognify's Task Decomposer. Analyze the query and break it into
-        focused subtasks. Each subtask should be specific and actionable.
+        focused subtasks. Each subtask MUST be:
+        1. Self-contained and independently executable
+        2. Written as a complete, clear instruction
+        3. Specific about what needs to be done and how
+        4. NOT just keywords or fragments
         
         IMPORTANT LIMITATIONS:
         1. Maximum 5 subtasks total
@@ -85,8 +92,23 @@ class AgentController:
         
         Format each subtask as: <type>: <description>
         
-        Remember to stay within the limits of 5 total subtasks and 1 subtask per type.
-        Prioritize the most important subtasks that cover different aspects of the query.
+        Example of GOOD subtasks:
+        - research_idea_generation: Analyze recent papers in quantum computing to identify gaps in current quantum error correction methods
+        - data_analysis: Calculate the correlation between model size and inference speed using the provided benchmark data
+        - code_generation: Create a Python script that implements parallel processing for large-scale data preprocessing
+        - summarization: Create a comprehensive report comparing different transformer architectures' performance on NLP tasks
+        
+        Example of BAD subtasks (too vague or incomplete):
+        - research_idea_generation: quantum computing research
+        - data_analysis: analyze data
+        - code_generation: implement algorithm
+        - summarization: transformer architectures
+        
+        Remember to:
+        1. Stay within the limits of 5 total subtasks and 1 subtask per type
+        2. Make each subtask clear, specific, and independently actionable
+        3. Include necessary context within each subtask description
+        4. Avoid fragmentary or ambiguous descriptions
         """
         
         self.decomposition_prompt = ChatPromptTemplate.from_messages([
@@ -260,6 +282,11 @@ class AgentController:
                 
                 # Skip if this agent type has already handled a task
                 if agent_type_count[task_type] >= 1:
+                    continue
+                
+                # Validate subtask description
+                if not self._validate_subtask_description(description):
+                    warnings.warn(f"Invalid subtask description: {description}")
                     continue
                 
                 # Classify search environment
@@ -471,6 +498,39 @@ class AgentController:
     def _classify_search_type(self, task_description: str) -> str:
         """Determine appropriate search environment for a task."""
         return self.query_classifier.classify(task_description)
+
+    def _validate_subtask_description(self, description: str) -> bool:
+        """
+        Validate that a subtask description is clear and self-contained.
+        
+        Args:
+            description (str): The subtask description to validate
+            
+        Returns:
+            bool: True if the description is valid, False otherwise
+        """
+        # Check minimum length (arbitrary but reasonable threshold)
+        words = description.split()
+        if len(words) < 8:
+            return False
+            
+        # Check for common ambiguous words when used alone
+        ambiguous_starts = ['analyze', 'process', 'handle', 'manage', 'do', 'make', 'perform']
+        first_word = words[0].lower()
+        if first_word in ambiguous_starts and len(words) < 12:
+            return False
+            
+        # Check for action verbs (basic heuristic)
+        action_verbs = ['analyze', 'create', 'develop', 'implement', 'identify', 
+                       'research', 'study', 'investigate', 'evaluate', 'assess',
+                       'compare', 'contrast', 'generate', 'build', 'design',
+                       'write', 'calculate', 'measure', 'test', 'validate']
+        
+        has_action_verb = any(verb in description.lower() for verb in action_verbs)
+        if not has_action_verb:
+            return False
+            
+        return True
 
     # Agent implementation methods
     def _summarization_agent(self, task: SubQuery):
