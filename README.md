@@ -1,27 +1,33 @@
-# NeuroParallel.ai - Intelligent AI Assistant Platform
+# NeuroParallel.ai - Intelligent AI Research Assistant
 
-NeuroParallel.ai is an advanced AI assistant platform that combines powerful language models with specialized search capabilities. The platform integrates OpenAI's GPT-4 for general conversation and Perplexity AI for enhanced search functionality, providing users with a versatile tool for both chat and research purposes.
+NeuroParallel.ai is an advanced AI research assistant platform that helps analyze and summarize research papers, generate code, and identify emerging trends in AI. The platform combines OpenAI's GPT-4 for sophisticated analysis with a powerful task decomposition system, providing users with comprehensive research insights and practical implementations.
 
 ## Features
 
 ### Current Features
-- **Dual-Mode Interface**
-  - Chat Mode: Engage in natural conversations using GPT-4
-  - Search Mode: Get detailed, citation-backed answers using Perplexity AI
-- **Real-time Streaming**
-  - Character-by-character response streaming
-  - Typing indicator animation
-  - Smooth scrolling and auto-resizing input
+- **Intelligent Task Decomposition**
+  - Automatically breaks down complex research tasks
+  - Handles multiple subtasks in parallel
+  - Combines results coherently
+- **Research Analysis**
+  - Analyzes latest AI research papers
+  - Identifies emerging trends and technologies
+  - Provides citation-backed insights
+- **Code Generation**
+  - Creates implementation scripts
+  - Handles data scraping and processing
+  - Follows best practices and includes documentation
 - **Modern UI/UX**
+  - Real-time streaming responses
+  - Syntax-highlighted code blocks
   - Clean, responsive design
-  - Easy mode switching
   - Mobile-friendly interface
 
 ### Upcoming Features
 - PDF RAG (Retrieval-Augmented Generation) System
-- Task Decomposition and Orchestration
-- Agent-based Problem Solving
-- Result Aggregation
+- Direct paper downloading and processing
+- Collaborative research sessions
+- Custom research focus areas
 
 ## Tech Stack
 
@@ -29,15 +35,16 @@ NeuroParallel.ai is an advanced AI assistant platform that combines powerful lan
 - HTML5/CSS3/JavaScript
 - Flask Templates
 - Server-Sent Events (SSE) for streaming
+- Syntax highlighting for code blocks
 - Material Icons
 - Inter Font Family
 
 ### Backend
 - Python 3.9+
-- Flask
-- Flask-CORS
-- OpenAI API
-- Perplexity AI API
+- Flask with async support
+- ChromaDB for message storage
+- OpenAI GPT-4
+- Task decomposition system
 
 ### Project Structure
 ```
@@ -47,15 +54,19 @@ NeuroParallel.ai/
 │   │   └── index.html
 │   ├── static/
 │   │   ├── css/
-│   │   │   └── style.css
+│   │   │   ├── style.css
+│   │   │   └── message-styles.css
 │   │   └── js/
 │   │       └── main.js
 │   └── app.py
 ├── backend/
 │   ├── agent/
 │   │   └── agent.py
-│   └── agent_summarizer/
-│       └── pdf_processor.py
+│   ├── controllers/
+│   │   ├── agentController.py
+│   │   └── agentRouter.py
+│   └── database/
+│       └── serverDB.py
 └── .env
 ```
 
@@ -63,13 +74,14 @@ NeuroParallel.ai/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/NeuroParallel.ai.git
+   git clone https://github.com/XayHanmonty/NeuroParallel.ai.git
    cd NeuroParallel.ai
    ```
 
 2. Set up your environment variables in `.env`:
    ```
    OPENAI_API_KEY=your_openai_api_key
+   CHROMA_API_KEY=your_chroma_api_key
    PERPLEXITY_API_KEY=your_perplexity_api_key
    ```
 
@@ -80,38 +92,46 @@ NeuroParallel.ai/
 
 4. Start the Flask server:
    ```bash
-   python frontend/app.py
+   PYTHONPATH=/path/to/NeuroParallel.ai python3 frontend/app.py
    ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Usage
 
-1. **Chat Mode**
-   - Click the "Chat" button in the navbar
-   - Type your message and press Enter or click Send
-   - Receive streamed responses from GPT-4
+1. **Research Analysis**
+   - Enter your research question or topic
+   - Receive a comprehensive analysis of recent papers
+   - View emerging trends with citations
 
-2. **Search Mode**
-   - Click the "Search" button in the navbar
-   - Enter your search query
-   - Get detailed, citation-backed responses from Perplexity AI
+2. **Code Generation**
+   - Request implementation of research concepts
+   - Get fully documented code with best practices
+   - Code is syntax-highlighted and easily copyable
 
-## Development Status
+## Recent Updates
 
-The project is actively under development. Current focus areas:
-- Integration of PDF processing capabilities
-- Implementation of agent-based task decomposition
-- Enhancement of search functionality
-- Addition of conversation memory and context
+### Backend Improvements
+- Implemented task decomposition system
+- Added ChromaDB integration for message storage
+- Upgraded to GPT-4 for enhanced analysis
+- Improved async handling in Flask routes
+
+### Frontend Enhancements
+- Added syntax highlighting for code blocks
+- Improved message formatting and styling
+- Enhanced UI for research results
+- Better error handling and user feedback
+
+### Code Quality
+- Refactored for better maintainability
+- Improved error handling and logging
+- Added comprehensive documentation
+- Enhanced type hints and comments
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Open a Pull Request
+We welcome contributions! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 
