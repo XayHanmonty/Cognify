@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4C51BF">
-    <title>NeuraParallel.ai Chat</title>
+    <title>NeuroParallel.ai Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,14 +14,24 @@
 <body>
     <div class="container">
         <nav class="navbar">
-            <h1>NeuraParallel.ai</h1>
+            <h1>NeuroParallel.ai</h1>
+            <div class="mode-toggle">
+                <button id="chat-mode" class="mode-button active" onclick="switchMode('chat')">
+                    <span class="material-icons">chat</span>
+                    Chat
+                </button>
+                <button id="search-mode" class="mode-button" onclick="switchMode('search')">
+                    <span class="material-icons">search</span>
+                    Search
+                </button>
+            </div>
         </nav>
         
         <div class="chat-container">
             <div id="chat-messages" class="chat-messages"></div>
             <div class="chat-input-container">
                 <textarea id="user-input" placeholder="Type your message here..." rows="1" autofocus></textarea>
-                <button onclick="sendMessage()" class="send-button">
+                <button onclick="handleSubmit()" class="send-button" title="Send">
                     <span class="material-icons">send</span>
                 </button>
             </div>
