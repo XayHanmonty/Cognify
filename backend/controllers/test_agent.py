@@ -39,6 +39,7 @@ def test_agent():
                             print(f"- Task ID: {subtask['_id']}")
                             print(f"  Type: {subtask['type']}")
                             print(f"  Query: {subtask['query']}")
+                            print(f"  Search Type: {subtask.get('search_type', 'closed')}")
                             print(f"  Status: {subtask['status']}\n")
                     else:
                         print("\nFailed to get task status")

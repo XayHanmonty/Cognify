@@ -9,6 +9,7 @@ from langchain.output_parsers import CommaSeparatedListOutputParser
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
+from backend.controllers.query_classifier import QueryClassifier
 
 # Schema Definitions
 class SubQuery(BaseModel):
@@ -24,59 +25,68 @@ class SubQuery(BaseModel):
         default_factory=dict,
         description="Domain-specific parameters for the task"
     )
+    search_type: str = Field(
+        default="closed",
+        description="Search environment type: 'closed' (OpenAI) or 'web' (Perplexity)",
+        examples=["closed", "web"]
+    )
 
 class AgentController:
     def __init__(self, model_name: str = "gpt-4-turbo-preview", mongo_uri: str = "mongodb://localhost:27017/"):
+        """Initialize the agent controller."""
+        self.model_name = model_name
         # Check for OpenAI API key
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is not set")
-            
+            raise ValueError("OPENAI_API_KEY not found in environment variables")
         self.llm = ChatOpenAI(model=model_name, api_key=api_key)
         self.parser = CommaSeparatedListOutputParser()
         
+        # Initialize MongoDB connection
+        try:
+            self.client = MongoClient(mongo_uri)
+            self.db = self.client.cognify
+            self.tasks_collection = self.db.tasks
+            self.subtasks_collection = self.db.subtasks
+        except Exception as e:
+            warnings.warn(f"MongoDB connection failed: {str(e)}")
+            # Create fallback collections
+            self.tasks_collection = {}
+            self.subtasks_collection = {}
+        
+        # Initialize query classifier
+        self.query_classifier = QueryClassifier(model_name=model_name)
+        
+        # Add search classification prompt
+        self.search_classifier_prompt = ChatPromptTemplate.from_messages([
+            ("system", """Classify if the task requires real-web search (Perplexity) or can be handled in closed environment (OpenAI). Use:
+            - 'web' if needing current/live data, real-world updates, or external verification
+            - 'closed' for theoretical, general knowledge, or code-related tasks"""),
+            ("human", "Task: {task}\nClassification:")
+        ])
+        
+        self.search_classifier_chain = self.search_classifier_prompt | self.llm | CommaSeparatedListOutputParser()
+
         # Configure the decomposition pipeline
         system_prompt = """
         You are Cognify's Task Decomposer. Analyze the query and break it into
-        specialized sub-tasks for parallel agent processing. Use these task types:
+        focused subtasks. Each subtask should be specific and actionable.
         
-        1. code_generation: For any tasks involving writing, generating, or modifying code
-           Example: "Generate a web scraper" -> "code_generation: Design web scraper structure"
+        For each subtask, determine its type:
+        - research_idea: Generating novel research directions
+        - data_analysis: Working with data and statistics
+        - code_generation: Writing or modifying code
+        - summarization: Condensing information
         
-        2. data_analysis: For tasks involving data processing or analysis
-           Example: "Analyze data" -> "data_analysis: Process and analyze the dataset"
-        
-        3. research_idea_generation: For tasks requiring research or ideation
-           Example: "Research best practices" -> "research_idea_generation: Investigate current best practices"
-        
-        4. summarization: For tasks involving condensing or summarizing information
-           Example: "Summarize findings" -> "summarization: Create concise summary of results"
-        
-        IMPORTANT RULES:
-        1. Always preserve key terms from the original query in your subtasks
-        2. For code-related tasks, break them down into:
-           - Requirements/design analysis
-           - Core implementation
-           - Testing/validation
-        3. Return subtasks as a comma-separated list
-        4. Each subtask should start with its type followed by a colon
-        
-        Example for code query:
-        Input: "Generate code for a simple web scraper"
-        Output:
-        research_idea_generation: Research and define requirements for web scraper implementation,
-        code_generation: Design and implement core web scraper structure and functions,
-        code_generation: Add error handling and data validation to web scraper,
-        data_analysis: Define test cases and validation approach for web scraper
+        Format each subtask as: <type>: <description>
         """
         
-        self.prompt = ChatPromptTemplate.from_messages([
+        self.decomposition_prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            ("human", "{query}")
+            ("human", "Query: {query}\nSubtasks:")
         ])
         
-        # Initialize the decomposition chain
-        self.decomposition_chain = self.prompt | self.llm | self.parser
+        self.decomposition_chain = self.decomposition_prompt | self.llm | self.parser
         
         # Registry of available agent capabilities
         self.AGENT_REGISTRY = {
@@ -85,16 +95,6 @@ class AgentController:
             "data_analysis": self._analysis_agent,
             "code_generation": self._code_agent
         }
-        
-        # Initialize MongoDB connection
-        try:
-            self.client = MongoClient(mongo_uri)
-            self.db = self.client.cognify
-            self.tasks_collection = self.db.tasks
-            self.subtasks_collection = self.db.subtasks
-            print("Successfully connected to MongoDB")
-        except Exception as e:
-            raise ConnectionError(f"Failed to connect to MongoDB: {str(e)}")
 
     def recursive_decompose(self, task: str, depth: int = 0) -> List[SubQuery]:
         """Recursively decompose a task into subtasks."""
@@ -187,7 +187,7 @@ class AgentController:
         # Remove common words that don't contribute to meaning
         common_words = {"a", "an", "the", "in", "on", "at", "for", "to", "of", "and", "or", "but"}
         query_terms = {term for term in query_terms if term not in common_words}
-        
+
         if query_terms:
             coverage = len(covered_terms.intersection(query_terms)) / len(query_terms)
             if coverage < 0.7:  
@@ -239,11 +239,15 @@ class AgentController:
                 if task_type not in self.AGENT_REGISTRY:
                     task_type = self._determine_task_type(description)
                 
+                # Classify search environment
+                search_type = self._classify_search_type(description)
+                
                 # Create subtask document
                 subtask_doc = {
                     "parent_task_id": task_id,
                     "type": task_type,
                     "query": description,
+                    "search_type": search_type,  # New field
                     "status": "pending",
                     "created_at": datetime.utcnow(),
                     "updated_at": datetime.utcnow()
@@ -433,6 +437,10 @@ class AgentController:
                     return task_type
                     
         return "summarization"  # default type
+
+    def _classify_search_type(self, task_description: str) -> str:
+        """Determine appropriate search environment for a task."""
+        return self.query_classifier.classify(task_description)
 
     # Agent implementation methods
     def _summarization_agent(self, task: SubQuery):
