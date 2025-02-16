@@ -182,7 +182,7 @@ class Agent:
                 user_message=query,
                 agent_response=full_response,
                 tags=["search"] + (tags or []),
-                sentiment="neutral"  # Search queries typically don't have sentiment
+                sentiment="neutral"  
             )
         else:
             response = self.search_client.chat.completions.create(
@@ -191,7 +191,6 @@ class Agent:
             )
             response_text = response.choices[0].message.content
             
-            # Store the search query and response
             self.message_db.add_message(
                 user_message=query,
                 agent_response=response_text,
@@ -199,9 +198,64 @@ class Agent:
                 sentiment="neutral"
             )
             return response_text
-    # TODO: SUMMARIZE AGENT BELOW
+    
+    def summarize(self, query, stream=True):
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an AI-powered summarization assistant that extracts key information from text. "
+                    "Follow these guidelines:\n\n"
+                    "1. Understand the main ideas and remove unnecessary details.\n"
+                    "2. Provide structured summaries based on the requested style:\n"
+                    "   - 'bullet': Use concise bullet points.\n"
+                    "   - 'paragraph': Write a well-structured paragraph.\n"
+                    "3. Adjust summary length as requested:\n"
+                    "   - 'short': Focus on the core message (1-2 sentences).\n"
+                    "   - 'medium': Cover key points concisely (3-5 sentences).\n"
+                    "   - 'long': Provide an in-depth summary (detailed, 7+ sentences).\n"
+                    "4. Ensure clarity, accuracy, and coherence.\n"
+                ),
+            },
+            {"role": "user", "content": query},
+        ]
 
-    #-------------------------------
+        if stream:
+            response_stream = self.search_client.chat.completions.create(
+                model="sonar-pro",
+                messages=messages,
+                stream=True
+            )
+            # Collect the full response while streaming
+            full_response = ""
+            for response in response_stream:
+                if response.choices[0].delta.content:
+                    chunk = response.choices[0].delta.content
+                    full_response += chunk
+                    yield chunk
+            
+            # Store the search query and response
+            self.message_db.add_message(
+                user_message=query,
+                agent_response=full_response,
+                tags=["summarization"],
+                sentiment="neutral"  
+            )
+        else:
+            response = self.search_client.chat.completions.create(
+                model="sonar-pro",
+                messages=messages
+            )
+            response_text = response.choices[0].message.content
+            
+            self.message_db.add_message(
+                user_message=query,
+                agent_response=response_text,
+                tags=["summarization"],
+                sentiment="neutral"
+            )
+            return response_text
+   
 
     def generate_code(self, query, stream=True):
         messages = [
@@ -256,7 +310,7 @@ class Agent:
             )
         else:
             response_text = response.choices[0].message.content
-            # Store the search query and response
+            
             self.message_db.add_message(
                 user_message=query,
                 agent_response=response_text,

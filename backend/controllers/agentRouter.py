@@ -11,7 +11,7 @@ class SimpleRouterAgent:
         self.agent_controller = AgentController()
         self.agent = Agent()
 
-    async def process_message(self, message: str) -> str:
+    async def process_message(self, message: str) -> Dict:
         """
         Process user message by:
         1. First decomposing it using AgentController
@@ -32,7 +32,7 @@ class SimpleRouterAgent:
                 if task_type == 'summarization':
                     # Handle summarization tasks using Agent's search capability
                     full_response = ""
-                    for chunk in self.agent.search(subtask.get('text', ''), stream=True):
+                    for chunk in self.agent.summarize(subtask.get('text', ''), stream=True):
                         full_response += chunk
                     logger.info(f"Summarization result: {full_response}")
                     results.append({
@@ -71,57 +71,65 @@ class SimpleRouterAgent:
             raise
 
     # TODO: Handle results from all agents
-    def _combine_results(self, results: List[Dict]) -> str:
+    def _combine_results(self, results: List[Dict]) -> Dict:
         """
         Combine results from different subtasks into a coherent response
         """
         combined = []
         
-        # Process research results first
+        # Add research results first
         research_results = [r['result'] for r in results if r['type'] == 'research']
         if research_results:
             combined.extend(research_results)
         
-        # Then process summaries
-        summaries = [r['result'] for r in results if r['type'] == 'summarization']
-        if summaries:
-            combined.extend(summaries)
-            
-        # Finally add code results
+        # Add summarization results
+        summary_results = [r['result'] for r in results if r['type'] == 'summarization']
+        if summary_results:
+            combined.extend(summary_results)
+        
+        # Add code results
         code_results = [r['result'] for r in results if r['type'] == 'code']
-        if code_results:
-            combined.extend(code_results)
         
-        # Clean up the output by removing redundant sections and sources
-        result = "\n".join(combined)
-        
-        # Extract all sources
-        sources = []
-        for section in result.split("Sources:"):
-            if ":" in section:  # Skip the first split which is before "Sources:"
-                continue
-            # Get the sources from this section
-            source_lines = [line.strip() for line in section.split("\n") if line.strip()]
-            sources.extend(source_lines)
-        
-        # Remove all "Sources:" sections from the main text
-        main_text = result.split("Sources:")[0].strip()
-        
-         
-        seen = set()
-        unique_sources = []
-        for source in sources:
-            if source not in seen:
-                seen.add(source)
-                unique_sources.append(source)
-        
-        # Combine main text with unique sources
-        if unique_sources:
-            result = f"{main_text}\n\nSources:\n" + "\n".join(unique_sources)
-        else:
-            result = main_text
+        # Clean up the research/summary output by removing redundant sections and sources
+        if combined:
+            result = "\n".join(combined)
             
-        return result if result else "No results found."
+            # Extract all sources
+            sources = []
+            for section in result.split("Sources:"):
+                if ":" in section:  # Skip the first split which is before "Sources:"
+                    continue
+                # Get the sources from this section
+                source_lines = [line.strip() for line in section.split("\n") if line.strip()]
+                sources.extend(source_lines)
+            
+            # Remove all "Sources:" sections from the main text
+            main_text = result.split("Sources:")[0].strip()
+            
+            # Deduplicate sources
+            seen = set()
+            unique_sources = []
+            for source in sources:
+                if source not in seen:
+                    seen.add(source)
+                    unique_sources.append(source)
+            
+            # Combine main text with unique sources
+            if unique_sources:
+                result = f"{main_text}\n\nSources:\n" + "\n".join(unique_sources)
+            else:
+                result = main_text
+        else:
+            result = ""
+            
+        # Add code results after the research/summary section
+        if code_results:
+            if result:
+                result += "\n\n## Generated Code:\n" + "\n".join(code_results)
+            else:
+                result = "\n".join(code_results)
+            
+        return {'response': result if result else "No results found."}
 
 if __name__ == "__main__":
     import asyncio

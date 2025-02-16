@@ -95,16 +95,43 @@ function appendMessage(message, isUser) {
                     <h3>Sources</h3>
                     <ol>${items}</ol>
                 </div>`;
-            });
-        
-        // Handle paragraphs
-        formattedMessage = formattedMessage
+            })
+            
+            // Format code blocks
+            .replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<div class="code-block">
+                    <div class="code-header">
+                        ${lang ? `<span class="code-language">${lang}</span>` : ''}
+                    </div>
+                    <pre><code class="${lang || ''}">${code}</code></pre>
+                </div>`;
+            })
+            // Handle paragraphs
             .split('\n\n')
-            .map(p => p.trim())
-            .filter(p => p && !p.startsWith('<'))
-            .map(p => `<p>${p}</p>`)
-            .join('');
-        
+            .map(para => {
+                if (para.trim().startsWith('##')) {
+                    // Handle headers
+                    return `<h2>${para.replace('##', '').trim()}</h2>`;
+                }
+                if (para.trim().startsWith('**Key Points:**')) {
+                    // Handle key points section
+                    return `<div class="key-points">
+                        <h3>${para.split('\n')[0]}</h3>
+                        ${para.split('\n').slice(1).join('\n')}
+                    </div>`;
+                }
+                if (para.trim().startsWith('Sources:')) {
+                    // Handle sources section
+                    return `<div class="sources">
+                        <h3>Sources</h3>
+                        ${para.replace('Sources:', '').trim()}
+                    </div>`;
+                }
+                // Regular paragraphs
+                return `<p>${para}</p>`;
+            })
+            .join('\n');
+
         messageDiv.innerHTML = formattedMessage;
     }
     
@@ -131,17 +158,12 @@ async function handleSubmit() {
         chatMessages.appendChild(typingIndicator);
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        const endpoint = currentMode === 'chat' ? '/chat' : '/search';
-        const response = await fetch(endpoint, {
+        const response = await fetch('/api/process', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
-                message: message,
-                query: message, 
-                stream: true 
-            }),
+            body: JSON.stringify({ message: message }),
         });
 
         if (!response.ok) {
@@ -171,15 +193,17 @@ async function handleSubmit() {
                 if (message.startsWith('data: ')) {
                     try {
                         const data = JSON.parse(message.slice(6));
-                        if (data.chunk) {
-                            // Add the new chunk character by character with a small delay
-                            const chars = data.chunk.split('');
+                        if (data.response) {
+                            // Add the response text character by character with a small delay
+                            const chars = data.response.split('');
                             for (const char of chars) {
                                 responseDiv.textContent += char;
                                 chatMessages.scrollTop = chatMessages.scrollHeight;
                                 // Add a tiny delay between characters
                                 await new Promise(resolve => setTimeout(resolve, 20));
                             }
+                        } else if (data.error) {
+                            responseDiv.textContent = `Error: ${data.error}`;
                         }
                     } catch (e) {
                         console.error('Error parsing JSON:', e);
