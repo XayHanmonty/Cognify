@@ -94,38 +94,38 @@ class Agent:
             )
             return response
 
-    def get_conversation_history(self, n_recent=5, tags=None):
-        """
-        Get recent conversation history
-        Args:
-            n_recent (int): Number of recent conversations to retrieve
-            tags (List[str], optional): Filter by specific tags
-        Returns:
-            Dict containing conversation history
-        """
-        return self.message_db.get_all_messages(tags=tags)
+    # def get_conversation_history(self, n_recent=5, tags=None):
+    #     """
+    #     Get recent conversation history
+    #     Args:
+    #         n_recent (int): Number of recent conversations to retrieve
+    #         tags (List[str], optional): Filter by specific tags
+    #     Returns:
+    #         Dict containing conversation history
+    #     """
+    #     return self.message_db.get_all_messages(tags=tags)
 
-    def get_similar_conversations(self, query, n_results=2, tags=None):
-        """
-        Find similar past conversations
-        Args:
-            query (str): Query to find similar conversations
-            n_results (int): Number of results to return
-            tags (List[str], optional): Filter by specific tags
-        Returns:
-            Dict containing similar conversations
-        """
-        return self.message_db.query_messages(query, n_results=n_results, tags=tags)
+    # def get_similar_conversations(self, query, n_results=2, tags=None):
+    #     """
+    #     Find similar past conversations
+    #     Args:
+    #         query (str): Query to find similar conversations
+    #         n_results (int): Number of results to return
+    #         tags (List[str], optional): Filter by specific tags
+    #     Returns:
+    #         Dict containing similar conversations
+    #     """
+    #     return self.message_db.query_messages(query, n_results=n_results, tags=tags)
 
-    def get_conversation_stats(self, time_range=None):
-        """
-        Get statistics about conversations
-        Args:
-            time_range (tuple, optional): Tuple of (start_time, end_time) to analyze
-        Returns:
-            Dict containing conversation statistics
-        """
-        return self.message_db.get_message_stats(time_range=time_range)
+    # def get_conversation_stats(self, time_range=None):
+    #     """
+    #     Get statistics about conversations
+    #     Args:
+    #         time_range (tuple, optional): Tuple of (start_time, end_time) to analyze
+    #     Returns:
+    #         Dict containing conversation statistics
+    #     """
+    #     return self.message_db.get_message_stats(time_range=time_range)
 
     def search(self, query, stream=True, tags=None):
         """
@@ -142,23 +142,23 @@ class Agent:
             {
                 "role": "system",
                 "content": (
-                    "You are an artificial intelligence assistant that helps users "
-                    "by providing detailed, accurate information. Format your response as follows:\n\n"
-                    "1. Present information in a clean, consistent format with proper spacing\n"
-                    "2. For weather forecasts:\n"
-                    "   • Present each day on a new line\n"
-                    "   • Format temperatures as: High: XX°F • Low: XX°F\n"
-                    "   • Present conditions after temperatures\n"
-                    "   • Use bullet points (•) to separate different pieces of information\n"
+                    "You are a research assistant specializing in analyzing and summarizing AI research papers. "
+                    "Follow these guidelines:\n\n"
+                    "1. Focus on recent developments in AI research\n"
+                    "2. Highlight key findings, methodologies, and emerging trends\n"
                     "3. Keep URLs hidden - use only source names in the Sources section\n"
                     "4. End with a 'Sources' section that lists source names (not URLs)\n\n"
-                    "Example weather format:\n"
-                    "Wednesday, February 14, 2024\n"
-                    "High: 56°F • Low: 49°F • Conditions: Rain likely\n"
-                    "Wind: Southwest, 10-20 mph with gusts up to 35 mph\n\n"
+                    "Example format:\n"
+                    "Key Findings:\n"
+                    "• Finding 1\n"
+                    "• Finding 2\n\n"
+                    "Methodologies:\n"
+                    "• Method 1\n"
+                    "• Method 2\n\n"
                     "Sources:\n"
-                    "1. Weather.gov\n"
-                    "2. National Weather Service"
+                    "1. Nature\n"
+                    "2. arXiv\n"
+                    "3. ICML Proceedings"
                 ),
             },
             {"role": "user", "content": query},
@@ -200,6 +200,11 @@ class Agent:
                 sentiment="neutral"
             )
             return response_text
+# TODO: SUMMARIZE AGENT BELOW
+
+
+
+# TODO: CODE_GENERATE AGENT BELOW
 
 # Example usage
 # if __name__ == "__main__":
