@@ -33,6 +33,10 @@ yarn-error.log
 .env.test.local
 .env.production.local
 
+# ChromaDB
+database/chroma_db/
+*.sqlite3
+
 # IDE
 .idea/
 .vscode/
