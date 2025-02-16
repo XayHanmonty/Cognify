@@ -79,6 +79,8 @@ class AgentController:
         2. Written as a complete, clear instruction
         3. Specific about what needs to be done and how
         4. NOT just keywords or fragments
+        5. A complete sentence with all context included
+        6. Free of dangling parentheses or incomplete clauses
         
         IMPORTANT LIMITATIONS:
         1. Maximum 5 subtasks total
@@ -95,20 +97,23 @@ class AgentController:
         Example of GOOD subtasks:
         - research_idea_generation: Analyze recent papers in quantum computing to identify gaps in current quantum error correction methods
         - data_analysis: Calculate the correlation between model size and inference speed using the provided benchmark data
-        - code_generation: Create a Python script that implements parallel processing for large-scale data preprocessing
+        - code_generation: Create a Python script that implements parallel processing for large-scale data preprocessing with configurable batch sizes
         - summarization: Create a comprehensive report comparing different transformer architectures' performance on NLP tasks
         
-        Example of BAD subtasks (too vague or incomplete):
+        Example of BAD subtasks (too vague, incomplete, or fragmentary):
         - research_idea_generation: quantum computing research
         - data_analysis: analyze data
-        - code_generation: implement algorithm
-        - summarization: transformer architectures
+        - code_generation: implement algorithm (missing details)
+        - summarization: focusing on the latest developments
+        - research_idea_generation: using machine learning to (incomplete)
         
         Remember to:
         1. Stay within the limits of 5 total subtasks and 1 subtask per type
         2. Make each subtask clear, specific, and independently actionable
-        3. Include necessary context within each subtask description
+        3. Include ALL necessary context within each subtask description
         4. Avoid fragmentary or ambiguous descriptions
+        5. Complete all parenthetical expressions
+        6. Never start a task with conjunctions (and, or, but) or prepositions
         """
         
         self.decomposition_prompt = ChatPromptTemplate.from_messages([
@@ -514,9 +519,18 @@ class AgentController:
         if len(words) < 8:
             return False
             
+        # Check for incomplete parentheses
+        if description.count('(') != description.count(')'):
+            return False
+            
+        # Check for sentence fragments that start with conjunctions or prepositions
+        fragment_starts = ['and', 'or', 'but', 'for', 'nor', 'yet', 'so', 'focusing', 'using', 'with']
+        first_word = words[0].lower()
+        if first_word in fragment_starts:
+            return False
+            
         # Check for common ambiguous words when used alone
         ambiguous_starts = ['analyze', 'process', 'handle', 'manage', 'do', 'make', 'perform']
-        first_word = words[0].lower()
         if first_word in ambiguous_starts and len(words) < 12:
             return False
             
@@ -524,7 +538,8 @@ class AgentController:
         action_verbs = ['analyze', 'create', 'develop', 'implement', 'identify', 
                        'research', 'study', 'investigate', 'evaluate', 'assess',
                        'compare', 'contrast', 'generate', 'build', 'design',
-                       'write', 'calculate', 'measure', 'test', 'validate']
+                       'write', 'calculate', 'measure', 'test', 'validate',
+                       'explore', 'examine', 'review', 'summarize', 'collect']
         
         has_action_verb = any(verb in description.lower() for verb in action_verbs)
         if not has_action_verb:
