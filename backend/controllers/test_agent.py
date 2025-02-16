@@ -9,9 +9,10 @@ def test_agent():
     try:
         # Test queries
         test_queries = [
-            "Analyze climate change data and suggest research directions",
-            "Generate code for a simple web scraper",
-            "Summarize the key findings from the latest AI research papers"
+            # "Given a set of logical conditions that form a paradoxical loop, such as 'The next statement is false. The previous statement is true,' how would you resolve the paradox while maintaining consistency with Gödel's incompleteness theorem and taking into account non-classical logics like paraconsistent logic?"
+            "Analyze the lates AI research papers and suggest research directions",
+            # "Generate code for a simple web scraper",
+            # "Summarize the key findings from the latest AI research papers"
         ]
         
         # Test each query
@@ -36,11 +37,11 @@ def test_agent():
                         print(f"Main Task: {task_status['task']['status']}")
                         print("\nSubtasks:")
                         for subtask in task_status['subtasks']:
-                            print(f"- Task ID: {subtask['_id']}")
-                            print(f"  Type: {subtask['type']}")
-                            print(f"  Query: {subtask['query']}")
-                            print(f"  Search Type: {subtask.get('search_type', 'closed')}")
-                            print(f"  Status: {subtask['status']}\n")
+                            print(f"- Task ID: {subtask['id']}")
+                            print(f"  Type: {subtask['metadata']['type']}")
+                            print(f"  Text: {subtask['text']}")
+                            print(f"  Search Type: {subtask['metadata'].get('search_type', 'closed')}")
+                            print(f"  Status: {subtask['metadata']['status']}\n")
                     else:
                         print("\nFailed to get task status")
                 else:

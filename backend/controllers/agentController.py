@@ -10,6 +10,7 @@ from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
 from backend.controllers.query_classifier import QueryClassifier
+import uuid
 
 # Schema Definitions
 class SubQuery(BaseModel):
@@ -243,15 +244,29 @@ class AgentController:
                 search_type = self._classify_search_type(description)
                 
                 # Create subtask document
+                # subtask_doc = {
+                #     "parent_task_id": task_id,
+                #     "type": task_type,
+                #     "query": description,
+                #     "search_type": search_type,  # New field
+                #     "status": "pending",
+                #     "created_at": datetime.utcnow(),
+                #     "updated_at": datetime.utcnow()
+                # }
+
                 subtask_doc = {
-                    "parent_task_id": task_id,
-                    "type": task_type,
-                    "query": description,
-                    "search_type": search_type,  # New field
-                    "status": "pending",
-                    "created_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow()
+                    "id": f"{task_id}_{uuid.uuid4()}",  # Unique document ID
+                    "text": description,                # The subquery text
+                    "metadata": {
+                        "parent_task_id": task_id,
+                        "type": task_type,
+                        "search_type": search_type,     # 'web' or 'closed'
+                        "status": "pending",
+                        "created_at": datetime.utcnow().isoformat(),
+                        "updated_at": datetime.utcnow().isoformat()
+                    }
                 }
+
                 
                 # Insert into MongoDB
                 subtask_id = self.subtasks_collection.insert_one(subtask_doc).inserted_id
@@ -327,14 +342,15 @@ class AgentController:
                 raise ValueError(f"Task not found: {task_id}")
                 
             # Get subtasks if they exist
-            subtasks = list(self.subtasks_collection.find({"parent_task_id": task_id}))
+            subtasks = list(self.subtasks_collection.find({"metadata.parent_task_id": task_id}))
             
             # Convert ObjectId to string for JSON serialization
             task["_id"] = str(task["_id"])
             for subtask in subtasks:
-                subtask["_id"] = str(subtask["_id"])
-                if "parent_task_id" in subtask:
-                    subtask["parent_task_id"] = str(subtask["parent_task_id"])
+                if "_id" in subtask:
+                    subtask["_id"] = str(subtask["_id"])
+                if "metadata" in subtask and "parent_task_id" in subtask["metadata"]:
+                    subtask["metadata"]["parent_task_id"] = str(subtask["metadata"]["parent_task_id"])
                     
             return {
                 "task": task,
