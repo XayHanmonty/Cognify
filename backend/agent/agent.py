@@ -18,7 +18,7 @@ load_dotenv(env_path)
 class Agent:
     def __init__(self):
         # Initialize OpenAI client for general chat
-        self.chat_client = OpenAI()  # Uses OPENAI_API_KEY from env
+        self.openai_client = OpenAI()  # Uses OPENAI_API_KEY from env
         
         # Initialize Perplexity client for search
         self.perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
@@ -49,7 +49,7 @@ class Agent:
         ]
 
         if stream:
-            completion = self.chat_client.chat.completions.create(
+            completion = self.openai_client.chat.completions.create(
                 model="gpt-4",
                 messages=messages,
                 stream=True
@@ -74,7 +74,7 @@ class Agent:
                 sentiment=sentiment
             )
         else:
-            completion = self.chat_client.chat.completions.create(
+            completion = self.openai_client.chat.completions.create(
                 model="gpt-4",
                 messages=messages
             )
@@ -142,23 +142,22 @@ class Agent:
             {
                 "role": "system",
                 "content": (
-                    "You are a research assistant specializing in analyzing and summarizing AI research papers. "
-                    "Follow these guidelines:\n\n"
-                    "1. Focus on recent developments in AI research\n"
-                    "2. Highlight key findings, methodologies, and emerging trends\n"
-                    "3. Keep URLs hidden - use only source names in the Sources section\n"
-                    "4. End with a 'Sources' section that lists source names (not URLs)\n\n"
-                    "Example format:\n"
-                    "Key Findings:\n"
-                    "• Finding 1\n"
-                    "• Finding 2\n\n"
-                    "Methodologies:\n"
-                    "• Method 1\n"
-                    "• Method 2\n\n"
-                    "Sources:\n"
-                    "1. Nature\n"
-                    "2. arXiv\n"
-                    "3. ICML Proceedings"
+                    "You are an intelligent search assistant that retrieves and summarizes relevant information "
+                    "based on user queries. Your goal is to provide concise, structured, and fact-based answers.\n\n"
+                    "Guidelines:\n"
+                    "1. Understand the user's intent and retrieve accurate, up-to-date information.\n"
+                    "2. If the query asks for a summary, provide key takeaways in bullet points.\n"
+                    "3. If the query is a direct question, provide a clear, well-structured response.\n"
+                    "4. If numerical data or statistics are involved, ensure accuracy and cite sources.\n"
+                    "5. End responses with a 'Sources' section listing source names (not URLs).\n\n"
+                    "Response Format:\n"
+                    "• **Summary** (if applicable)\n"
+                    "• **Key Points** (bullet points for clarity)\n"
+                    "• **Sources:**\n"
+                    "  1. Source Name\n"
+                    "  2. Source Name\n"
+                    "  3. Source Name\n\n"
+                    "Adjust responses based on query type while maintaining conciseness and clarity."
                 ),
             },
             {"role": "user", "content": query},
@@ -200,11 +199,71 @@ class Agent:
                 sentiment="neutral"
             )
             return response_text
-# TODO: SUMMARIZE AGENT BELOW
+    # TODO: SUMMARIZE AGENT BELOW
 
+    #-------------------------------
 
+    def generate_code(self, query, stream=True):
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a specialized AI code-generation assistant that helps developers write, "
+                    "refactor, and optimize code efficiently. Follow these guidelines:\n\n"
+                    "1. Generate clean, modular, and well-documented code.\n"
+                    "2. Use best practices and performance optimizations where applicable.\n"
+                    "3. If applicable, provide a brief explanation before the code block.\n"
+                    "4. Ensure correctness, avoiding unnecessary complexity.\n"
+                    "5. Output code in markdown format for clarity.\n\n"
+                    "Example:\n"
+                    "```python\n"
+                    "# This function sorts a list using quicksort\n"
+                    "def quicksort(arr):\n"
+                    "    if len(arr) <= 1:\n"
+                    "        return arr\n"
+                    "    pivot = arr[len(arr) // 2]\n"
+                    "    left = [x for x in arr if x < pivot]\n"
+                    "    middle = [x for x in arr if x == pivot]\n"
+                    "    right = [x for x in arr if x > pivot]\n"
+                    "    return quicksort(left) + middle + quicksort(right)\n"
+                    "```\n\n"
+                    "Provide the output accordingly based on the user's request."
+                ),
+            },
+            {"role": "user", "content": query},
+        ]
 
-# TODO: CODE_GENERATE AGENT BELOW
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            stream=stream
+        )
+
+        if stream:
+            full_response = ""
+            for chunk in response:
+                if chunk.choices[0].delta.content:
+                    chunk_text = chunk.choices[0].delta.content
+                    full_response += chunk_text
+                    yield chunk_text
+            
+            # Store the complete response after streaming
+            self.message_db.add_message(
+                user_message=query,
+                agent_response=full_response,
+                tags=["code_generate"],
+                sentiment="neutral"
+            )
+        else:
+            response_text = response.choices[0].message.content
+            # Store the search query and response
+            self.message_db.add_message(
+                user_message=query,
+                agent_response=response_text,
+                tags=["code_generate"],
+                sentiment="neutral"
+            )
+            return response_text
 
 # Example usage
 # if __name__ == "__main__":

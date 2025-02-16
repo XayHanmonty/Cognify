@@ -53,7 +53,7 @@ class SimpleRouterAgent:
                 elif task_type == 'code_generation':
                     # Handle code generation tasks
                     full_response = ""
-                    for chunk in self.agent.search(subtask.get('text', ''), stream=True):
+                    for chunk in self.agent.generate_code(subtask.get('text', ''), stream=True):
                         full_response += chunk
                     logger.info(f"Code generation result: {full_response}")
                     results.append({
@@ -69,7 +69,7 @@ class SimpleRouterAgent:
         except Exception as e:
             logger.error(f"Error in SimpleRouterAgent: {str(e)}")
             raise
-        
+
     # TODO: Handle results from all agents
     def _combine_results(self, results: List[Dict]) -> str:
         """
