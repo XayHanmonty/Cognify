@@ -73,13 +73,20 @@ class AgentController:
         You are Cognify's Task Decomposer. Analyze the query and break it into
         focused subtasks. Each subtask should be specific and actionable.
         
+        IMPORTANT LIMITATIONS:
+        1. Maximum 5 subtasks total
+        2. Maximum 1 subtask per agent type
+        
         For each subtask, determine its type:
-        - research_idea: Generating novel research directions
+        - research_idea_generation: Generating novel research directions
         - data_analysis: Working with data and statistics
         - code_generation: Writing or modifying code
         - summarization: Condensing information
         
         Format each subtask as: <type>: <description>
+        
+        Remember to stay within the limits of 5 total subtasks and 1 subtask per type.
+        Prioritize the most important subtasks that cover different aspects of the query.
         """
         
         self.decomposition_prompt = ChatPromptTemplate.from_messages([
@@ -222,7 +229,18 @@ class AgentController:
             
             # Process and validate each subtask
             subtasks = []
+            agent_type_count = {
+                "summarization": 0,
+                "research_idea_generation": 0,
+                "data_analysis": 0,
+                "code_generation": 0
+            }
+            
             for task in raw_subtasks:
+                # Break if we've reached 5 subtasks
+                if len(subtasks) >= 5:
+                    break
+                    
                 task = task.strip()
                 if not task:
                     continue
@@ -240,20 +258,14 @@ class AgentController:
                 if task_type not in self.AGENT_REGISTRY:
                     task_type = self._determine_task_type(description)
                 
+                # Skip if this agent type has already handled a task
+                if agent_type_count[task_type] >= 1:
+                    continue
+                
                 # Classify search environment
                 search_type = self._classify_search_type(description)
                 
                 # Create subtask document
-                # subtask_doc = {
-                #     "parent_task_id": task_id,
-                #     "type": task_type,
-                #     "query": description,
-                #     "search_type": search_type,  # New field
-                #     "status": "pending",
-                #     "created_at": datetime.utcnow(),
-                #     "updated_at": datetime.utcnow()
-                # }
-
                 subtask_doc = {
                     "id": f"{task_id}_{uuid.uuid4()}",  # Unique document ID
                     "text": description,                # The subquery text
@@ -266,12 +278,14 @@ class AgentController:
                         "updated_at": datetime.utcnow().isoformat()
                     }
                 }
-
                 
                 # Insert into MongoDB
                 subtask_id = self.subtasks_collection.insert_one(subtask_doc).inserted_id
                 subtask_doc["_id"] = str(subtask_id)
                 subtasks.append(subtask_doc)
+                
+                # Increment the count for this agent type
+                agent_type_count[task_type] += 1
             
             # Update main task status
             self.tasks_collection.update_one(
@@ -492,8 +506,8 @@ if __name__ == "__main__":
             print("\nValid decomposition. Tasks:")
             for task in tasks["subtasks"]:
                 print(f"\n- Task ID: {task['_id']}")
-                print(f"  Type: {task['type']}")
-                print(f"  Query: {task['query']}")
-                print(f"  Status: {task['status']}")
+                print(f"  Type: {task['metadata']['type']}")
+                print(f"  Query: {task['text']}")
+                print(f"  Status: {task['metadata']['status']}")
     except Exception as e:
         print(f"Error: {str(e)}")
