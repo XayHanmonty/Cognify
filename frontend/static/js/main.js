@@ -1,9 +1,25 @@
 const chatMessages = document.getElementById('chat-messages');
 const userInput = document.getElementById('user-input');
 
-userInput.addEventListener('keypress', function(e) {
+// Function to auto-resize textarea
+function autoResizeTextarea() {
+    userInput.style.height = 'auto';
+    userInput.style.height = (userInput.scrollHeight) + 'px';
+}
+
+// Add input event listener for auto-resize
+userInput.addEventListener('input', autoResizeTextarea);
+
+userInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
-        sendMessage();
+        if (e.shiftKey) {
+            // Let the new line be added naturally
+            return;
+        } else {
+            // Prevent the default enter behavior and send message
+            e.preventDefault();
+            sendMessage();
+        }
     }
 });
 
